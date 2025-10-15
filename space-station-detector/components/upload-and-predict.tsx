@@ -164,7 +164,12 @@ export function UploadAndPredict() {
                 <CardTitle className="text-base font-medium truncate">{file.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <PredictionOverlay file={file} imageUrl={url} predictions={detectionsByIndex.get(idx) || []} />
+                <PredictionOverlay
+                  file={file}
+                  imageUrl={results?.[idx]?.image || url} // use backend image if available
+                  predictions={detectionsByIndex.get(idx) || []}
+                />
+
                 {!!detectionsByIndex.get(idx)?.length && (
                   <div className="mt-4">
                     <p className="text-sm font-medium mb-2">Detections</p>
