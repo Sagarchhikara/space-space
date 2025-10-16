@@ -1,25 +1,46 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Upload, Loader2 } from "lucide-react"
 
 export function Demo() {
   const [isLoading, setIsLoading] = useState(false)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(null) // local preview
+  const [backendImage, setBackendImage] = useState<string | null>(null) // processed image from backend
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setPreview(event.target?.result as string)
-        setIsLoading(true)
-        setTimeout(() => setIsLoading(false), 2000)
-      }
-      reader.readAsDataURL(file)
+    if (!file) return
+
+    // show local preview immediately
+    const reader = new FileReader()
+    reader.onload = (event) => setPreview(event.target?.result as string)
+    reader.readAsDataURL(file)
+
+    // now send image to backend
+    setIsLoading(true)
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("http://localhost:5000/predict", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) throw new Error("Backend request failed")
+
+      // backend returns JSON like { image_url: "http://localhost:5000/uploads/result.jpg" }
+      const data = await res.json();
+      console.log(data);  // <-- add this to see what is actually returned
+      setBackendImage(data.annotated_image);  // must match key exactly
+    } catch (err) {
+      console.error("Upload error:", err)
+      alert("Something went wrong. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -36,7 +57,7 @@ export function Demo() {
             {/* Upload Area */}
             <div className="flex-1">
               <label className="block">
-                <div className="glass-dark p-8 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary transition-smooth cursor-pointer text-center">
+                <div className="glass-dark p-8 rounded-backendImagelg border-2 border-dashed border-primary/50 hover:border-primary transition-smooth cursor-pointer text-center">
                   <Upload size={32} className="mx-auto mb-4 text-primary" />
                   <p className="text-foreground/70 mb-2">Drag and drop your image here</p>
                   <p className="text-sm text-foreground/50">or click to browse</p>
@@ -46,11 +67,11 @@ export function Demo() {
             </div>
 
             {/* Preview Area */}
-            <div className="flex-1">
-              {preview ? (
+            <div className="flex-1 relative">
+              {(preview || backendImage) ? (
                 <div className="relative">
                   <img
-                    src={preview || "/placeholder.svg"}
+                    src={backendImage || preview || "/placeholder.svg"}
                     alt="Preview"
                     className="w-full h-64 object-cover rounded-lg"
                   />
@@ -59,17 +80,9 @@ export function Demo() {
                       <Loader2 size={32} className="text-primary animate-spin" />
                     </div>
                   )}
-                  {!isLoading && (
+                  {!isLoading && backendImage && (
                     <div className="mt-4 p-4 glass rounded-lg">
-                      <p className="text-sm text-foreground/70 mb-2">Detected Objects:</p>
-                      <div className="space-y-2">
-                        {["Person (98%)", "Dog (95%)", "Tree (87%)"].map((obj, i) => (
-                          <div key={i} className="flex justify-between text-sm">
-                            <span>{obj.split("(")[0]}</span>
-                            <span className="text-primary">{obj.split("(")[1]}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-sm text-foreground/70 mb-2">Processed by backend ✅</p>
                     </div>
                   )}
                 </div>
