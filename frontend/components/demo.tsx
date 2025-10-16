@@ -25,7 +25,7 @@ export function Demo() {
     formData.append("file", file)
 
     try {
-      const res = await fetch("http://localhost:5000/predict", {
+      const res = await fetch("https://space-space-6nu3.onrender.com/predict", {
         method: "POST",
         body: formData,
       })

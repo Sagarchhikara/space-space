@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const endpoint = process.env.MODEL_API_URL || "http://localhost:5000/predict"
+    const endpoint = process.env.MODEL_API_URL || "https://space-space-6nu3.onrender.com/predict"
     const authHeader = process.env.MODEL_API_AUTH_HEADER
 
     // Process all images
